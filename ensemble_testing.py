@@ -58,7 +58,13 @@ device = torch.device(dev)
 
 
 def load_techniques():
-    """Loads techniques into the ensemble"""
+    """Loads techniques into the ensemble
+    Input: None
+    
+    Output:
+    techniques      list containing the VPR techniques
+       
+    """
     print('loading techniques')
     model1 = network.GeoLocalizationNet(args).to(device)
     model2 = network.GeoLocalizationNet(args).to(device)
@@ -95,6 +101,11 @@ def load_techniques():
 
 
 class WeightFunctionClass():
+    """
+    Class containing the weight function and its methods. 
+    
+    
+    """ 
     def __init__(self, techniques, weights_functions, weight_function_type, generative,features_dim, mean_desc_list=None):
 
         self.weights_functions = weights_functions
@@ -106,17 +117,31 @@ class WeightFunctionClass():
         self.features_dim = features_dim
 
     def get_weights(self, features):
+        """
+        Function that returns the weights given by the weight function
+        
+        Input: 
+        features        list of size T containing the query feature descriptors of each query image
+                        for each technique t
+                        
+        Output:
+        scores          list of size T containing the weights given in each feature space to all query descriptors
+        
+        """
         pred_list = []
 
         weights_start_time = time.time()
 
         if generative ==False:
+            #Weight calculation for discriminative methods
 
 
             for i in range(len(features)):
                 print('Calculating weights for tech {}'.format(i))
 
                 if self.weight_function_type == 'NN_classifier':
+                    #Predict the weights for all query descriptors of tech i using the NN model 
+                    
                     sigmoid = torch.nn.Sigmoid()
                     desc = torch.from_numpy(features[i]).to(device)
 
@@ -125,20 +150,11 @@ class WeightFunctionClass():
                     pred = pred.cpu().detach().numpy()
                     print(pred.shape)
                     pred_list.append(pred)
-                    if i == 0:
-                        #print(pred_list[i])
-                        pitts_count = 0
-                        msls_count = 0
-                        for j in range(len(pred_list[i])):
-                            if pred_list[i][j][0] > pred_list[i][j][1]:
-                                pitts_count += 1
-                            if pred_list[i][j][0] < pred_list[i][j][1]:
-                                msls_count += 1
-                        print('pitts_count: {}'.format(pitts_count))
-                        print('msls_count: {}'.format(msls_count))
+
 
 
                 else:
+                    #Predict the weights for all query descriptors of tech i using the predict_proba() method of the KNN
                     test = time.time()
                     pred = self.weights_functions[i][0].predict_proba(features[i])
                     # if i < 3:
@@ -146,45 +162,28 @@ class WeightFunctionClass():
                     print(pred.shape)
                     pred_list.append(pred)
                     print('predict proba time: {}'.format(time.time()-test))
-                    # if i == 4:
-                    #     #print(pred_list[i])
-                    #     pitts_count = 0
-                    #     msls_count = 0
-                    #     for j in range(len(pred_list[i])):
-                    #         if pred_list[i][j][0] > pred_list[i][j][1]:
-                    #             pitts_count += 1
-                    #         if pred_list[i][j][0] < pred_list[i][j][1]:
-                    #             msls_count += 1
-                    #     print('pitts_count: {}'.format(pitts_count))
-                    #     print('msls_count: {}'.format(msls_count))
-
+                  
 
 
 
 
             scores = pred_list
-            # for i in range(pred_list[0].shape[0]):
-            #     avg_score = np.array([0.,0.])
-            #     for j in range(len(features)):
-            #         #avg_score += np.array([1.,1.])
-            #         avg_score += pred_list[j][i]
-            #
-            #
-            #     avg_score = avg_score/np.sum(avg_score)
-            #     scores.append(avg_score)
-
+         
 
 
         if generative == True:
+             #Weight calculation for generative methods
 
             for i in range(len(features)):
+                #Calculate likelihood values for all query descriptors of tech i
                 print('Calculating weights for tech {}'.format(i))
-                #n_features = get_output_shape(techniques[i], (1, 3, 100, 100))[1]
                 pred = self.weights_functions[i][0].score_samples(features[i])
                 print(pred.shape)
                 print(self.mean_desc_list[i].shape)
+                
+                #Estimate the maximum possible likelihood value
                 max_lik = np.exp((self.weights_functions[i][0].score_samples(self.mean_desc_list[i].reshape(1, -1))[0]/self.features_dim[i]))
-
+                #Normalize the likelihood values to get the weights
                 pred1 = pred/self.features_dim[i]
                 pred2 = norm_func(np.exp(pred1), 0, max_lik)
 
@@ -227,19 +226,11 @@ pca_list = []
 weight_function_type = 'KNN'
 generative = False
 ds_aware = True
-#tweakpara_list = [0.01, 0.025, 0.05, 0.075, 0.1, 0.2, 0.5, 1.0]
-#tweakpara_list = [0.01, 0.05, 0.1, 0.3, 0.5, 1.0]
-#bandwidth_list = [0.1, 0.2]
+
 recall_dict = {}
-#tweakpara_list = [5000]
-#tweakpara_list = [1, 2, 3]#, 4, 5]
-
-#tweakpara_list = [1, 3, 5, 10, 15, 25, 50, 100]
 tweakpara_list = [1]
-#tweakpara_list = [1, 10, 100, 1000, 5000, 10000]
-
 mean_desc_list = []
-#
+
 
 training_data_path_list = []
 for i in range(len(training_dataset_names)):
@@ -257,13 +248,17 @@ import time
 start_time = time.time()
 
 for i in range(len(tweakpara_list)):
+    #Perform test for each given hyperparameter value
 
     recall_1 = []
 
     if ds_aware == True:
+        #If a domain shift-aware method is used, train/fit the weight functions 
         weights_functions, mean_desc_list = get_weight_functions(training_data_path_list, [tweakpara_list[i]], weight_function_type, techniques, pca_list, feature_dims_new, training_dataset_names)
     if ds_aware == False:
         weights_functions = None
+        
+    
     weight_function_obj = WeightFunctionClass(techniques, weights_functions, weight_function_type, generative, feature_dims_new, mean_desc_list)
 
 
