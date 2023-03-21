@@ -34,7 +34,7 @@ def parse_arguments():
     parser.add_argument("--mining", type=str, default="partial", choices=["partial", "full", "random", "msls_weighted"])
     # Model parameters
     parser.add_argument("--backbone", type=str, default="resnet18conv4",
-                        choices=["alexnet", "vgg16", "resnet18conv4", "resnet18conv5", 
+                        choices=["alexnet", "vgg16", "resnet18conv4", "resnet18conv5",
                                  "resnet50conv4", "resnet50conv5", "resnet101conv4", "resnet101conv5",
                                  "cct384", "vit"], help="_")
     parser.add_argument("--l2", type=str, default="before_pool", choices=["before_pool", "after_pool", "none"],
@@ -65,7 +65,7 @@ def parse_arguments():
     parser.add_argument('--test_method', type=str, default="hard_resize",
                         choices=["hard_resize", "single_query", "central_crop", "five_crops", "nearest_crop", "maj_voting"],
                         help="This includes pre/post-processing methods and prediction refinement")
-    parser.add_argument("--majority_weight", type=float, default=0.01, 
+    parser.add_argument("--majority_weight", type=float, default=0.01,
                         help="only for majority voting, scale factor, the higher it is the more importance is given to agreement")
     parser.add_argument("--efficient_ram_testing", action='store_true', help="_")
     parser.add_argument("--val_positive_dist_threshold", type=int, default=25, help="_")
@@ -88,8 +88,17 @@ def parse_arguments():
                         help="Path with images to be used to compute PCA (ie: pitts30k/images/train")
     parser.add_argument("--save_dir", type=str, default="default",
                         help="Folder name of the current run (saved in ./logs/)")
+
+    #New parameters for domain shift-aware VPR
+    parser.add_argument("--weight_function", type=str, default="KNN", help="Possible arguments: KNN, NN_classifier, KDE, GMM")
+    parser.add_argument("--ds_aware", type=bool, default=True, help="_")
+    parser.add_argument("--tweakpara_list", type=str, default='1', help="_")
+    #parser.add_argument('--tweakpara_list','--tweakpara_list', nargs='+', type=int, help="_", default=[1])
+    parser.add_argument("--indiv_tech", type=int, default=0, help="_")
+    parser.add_argument("--fuse_type", type=str, default="avg_voting", help="Possible arguments: avg_voting, individual, max_voting, max_score, dyn_mpf, random_pair")
+
     args = parser.parse_args()
-    
+
     if args.datasets_folder == None:
         try:
             args.datasets_folder = os.environ['DATASETS_FOLDER']
@@ -97,27 +106,26 @@ def parse_arguments():
             raise Exception("You should set the parameter --datasets_folder or export " +
                             "the DATASETS_FOLDER environment variable as such \n" +
                             "export DATASETS_FOLDER=../datasets_vg/datasets")
-    
+
     if args.aggregation == "crn" and args.resume == None:
         raise ValueError("CRN must be resumed from a trained NetVLAD checkpoint, but you set resume=None.")
-    
+
     if args.queries_per_epoch % args.cache_refresh_rate != 0:
         raise ValueError("Ensure that queries_per_epoch is divisible by cache_refresh_rate, " +
                          f"because {args.queries_per_epoch} is not divisible by {args.cache_refresh_rate}")
-    
+
     if torch.cuda.device_count() >= 2 and args.criterion in ['sare_joint', "sare_ind"]:
         raise NotImplementedError("SARE losses are not implemented for multiple GPUs, " +
                                   f"but you're using {torch.cuda.device_count()} GPUs and {args.criterion} loss.")
-    
+
     if args.mining == "msls_weighted" and args.dataset_name != "msls":
         raise ValueError("msls_weighted mining can only be applied to msls dataset, but you're using it on {args.dataset_name}")
-    
+
     if args.off_the_shelf in ["radenovic_sfm", "radenovic_gldv1", "naver"]:
         if args.backbone not in ["resnet50conv5", "resnet101conv5"] or args.aggregation != "gem" or args.fc_output_dim != 2048:
             raise ValueError("Off-the-shelf models are trained only with ResNet-50/101 + GeM + FC 2048")
-    
+
     if args.pca_dim != None and args.pca_dataset_folder == None:
         raise ValueError("Please specify --pca_dataset_folder when using pca")
-    
-    return args
 
+    return args
