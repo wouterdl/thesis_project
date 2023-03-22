@@ -98,6 +98,7 @@ def parse_arguments():
     #parser.add_argument('--tweakpara_list','--tweakpara_list', nargs='+', type=int, help="_", default=[1])
     parser.add_argument("--indiv_tech", type=int, default=0, help="_")
     parser.add_argument("--fuse_type", type=str, default="avg_score", help="Possible arguments: avg_score individual, max_voting, max_score, dyn_mpf, random_pair")
+    parser.add_argument("--method_instance", type=str, default="KNN1", help="Choose a specific method instance (method + hyperparameter combination), e.g.: KNN10000")
 
     args = parser.parse_args()
 

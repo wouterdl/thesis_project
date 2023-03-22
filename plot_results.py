@@ -51,67 +51,6 @@ eynsham_path = os.path.join(os.getcwd(), 'datasets/eynsham/images/test/database/
 san_francisco_path = os.path.join(os.getcwd(), 'datasets/san_francisco/images/test/database/')
 
 
-# def load_images(img_paths, n_images):
-#     img_lengths = []
-#     img_list = []
-#     for value in img_paths:
-#         print('loading images from folder: {}'.format(value))
-#         count = 0
-#
-#         tmp_list = []
-#         for filename in glob.glob(os.path.join(value, "*.jpg")):
-#             tmp_list.append(filename)
-#
-#         random.shuffle(tmp_list)
-#
-#         if len(tmp_list) > n_images:
-#             tmp_list = tmp_list[:n_images]
-#
-#         for filename in tmp_list:
-#             im = np.asarray(Image.open(filename).resize((640,480)).convert('RGB'))
-#             print(im.shape)
-#             #im = im.flatten()
-#             #print(im.shape)
-#             im_tf = base_transform(im)#.permute(2, 0, 1)
-#             img_list.append(im_tf)
-#             count += 1
-#
-#         img_lengths.append(count)
-#     print('DIMENSION TEST, TRAIN IMGS: {}'.format(img_list[0].shape))
-#     #for i in range(len(img_lengths)):
-#             #print('Loaded {} images of dataset {}'.format(img_lengths[i], img_paths[i]))
-#     return img_list, img_lengths
-
-# def apply_descriptor(descriptor, img_list, descriptor_arg):
-#     for i in range(len(img_list)):
-#         #print(type(img_list[i]))
-#         if descriptor_arg == 'resnet18' or descriptor_arg == 'resnet18_NV_pitts' or descriptor_arg == 'resnet18_trained' or descriptor_arg == 'resnet18_NV_msls':
-#             #print('TESTSETSTSTE')
-#             #print('image: {}'.format(img_list[i].shape))
-#             img = torch.FloatTensor(img_list[i]).to(device)
-#             if img.dim() > 2:
-#                 #img = torch.permute(img, (2, 0, 1))
-#                 print('DIMENSION TEST, TRAIN IMGS: {}'.format(img.size()))
-#             if img.dim() < 3:
-#                 img = torch.unsqueeze(img, 0)
-#             img = torch.unsqueeze(img, 0)
-#             if descriptor_arg == 'resnet18_trained':
-#                 sigmoid = torch.nn.Sigmoid()
-#
-#                 img_list[i] = sigmoid(descriptor(img)).squeeze().cpu().detach().numpy()
-#             else:
-#                 img_list[i] = descriptor(img).squeeze().cpu().detach().numpy()#, channel_axis=-1)
-#         #print(img_list[i].shape)
-#         if descriptor_arg == 'hog':
-#             img_list[i] = descriptor(img_list[i], channel_axis=-1)
-#
-#         else:
-#             img_list[i] = img_list[i].flatten()
-#
-#     #img_list = np.array(img_list)
-#     print(type(img_list[0]))
-#     print('DIMENSION TEST, TRAIN DESCRIPTORS: {}'.format(img_list[0].shape))
-#     return img_list
 
 
 def load_techniques():
@@ -142,17 +81,14 @@ def load_techniques():
     model6.eval()
 
     techniques = [model3, model4, model5, model6]
-    #techniques = [model1]
-    #techniques = [model1, model2]
+
     print('Techniques loaded')
 
     return techniques
 
 def load_training_datasets(technique_nr, datasets, n_images_train):
 
-    #img_list, img_lengths = load_images(img_paths, n_images_train)
 
-    #desc_list_train = apply_descriptor(technique, img_list, 'resnet18_NV_pitts')
 
     desc_list_train = []
     img_lengths = []
@@ -162,10 +98,7 @@ def load_training_datasets(technique_nr, datasets, n_images_train):
         desc_array = np.load('descriptors/{}_TRAIN_descriptors_tech{}.npy'.format(dataset, technique_nr))
 
         print(desc_array.shape)
-        # if desc_array.shape[1] == 1024:
-        #     print('reducing dimnesionality')
-        #     desc_array = desc_array[:,0:512]
-        #     assert(desc_array.shape[1] == 512)
+
         resize_factor = math.ceil(desc_array.shape[0]/n_images_train)
         before_len = len(desc_list_train)
         for i in range(desc_array.shape[0]):
@@ -176,11 +109,9 @@ def load_training_datasets(technique_nr, datasets, n_images_train):
         img_lengths.append(after_len-before_len)
 
     print(len(desc_list_train))
-    #assert(len(desc_list_train)==2*n_images_train)
+
     print('Max value train descriptor: {}'.format(np.amax(desc_list_train[0])))
     print('Min value train descriptor: {}'.format(np.amin(desc_list_train[0])))
-
-    #img_lengths = int(len(desc_list_train)/2)
 
     return desc_list_train, img_lengths
 
@@ -203,6 +134,7 @@ def load_test_dataset(n_images_test, technique_nr, method):
         n_images_test = result_array.shape[0]
 
     for i in range(n_images_test):
+        #Append green color if correct, red if incorrect, based on result_array
 
         if result_array[i, 1] == 1:
             colors.append('g')
@@ -242,13 +174,7 @@ def apply_tsne(desc_list_train, desc_list_test, n_images_train, method):
     tsne_data = tsne_after_pca.fit_transform(desc_list)
 
     print('TSNE SHAPE BEFORE: {}'.format(tsne_data.shape))
-    #assert tsne_data.shape[0] == 2000
-    #if method == 'KDE' or method == 'GMM':
-    #
-    # if 'KDE' in method or 'GMM' in method:
-    #     tsne_data = np.concatenate((tsne_data[0:n_images_train], tsne_data[(2*n_images_train):]))
-    #tsne_data = tsne_data[0:n_images_train]
-    #assert tsne_data.shape[0] == 1000
+
     print('TSNE SHAPE AFTER: {}'.format(tsne_data.shape))
 
     return tsne_data
@@ -270,10 +196,13 @@ def create_plot(tsne_data_list, colors, n_images_train, indices, method, technam
 
 
         if 'KDE' in method or 'GMM' in method:
+            ### Generating plots for generative method ###
+
             fig_dir = os.path.join(os.getcwd(), 'plots/result_plots/{}/generative'.format(args.dataset_name))
 
 
             if (i % 2) == 0:
+                # If technique is trained on pitts (tech0, tech2), get blue colors for training data
                 train_img_no = n_images_train[0]
                 new_colors = ['b']*train_img_no + colors
                 train_colors = ['b']*train_img_no
@@ -281,10 +210,12 @@ def create_plot(tsne_data_list, colors, n_images_train, indices, method, technam
 
 
             else:
+                # If technique is trained on msls (tech1, tech3), get magenta colors for training data
                 train_img_no = n_images_train[1]
                 new_colors = ['m']*train_img_no + colors
                 train_colors = ['m']*train_img_no
 
+            # concatenate TSNE descriptors of correct training data and test data
             tsne_data = np.concatenate((tsne_data[0:train_img_no], tsne_data[(2*train_img_no):]))
 
             #plot (incorrect) matches
@@ -327,7 +258,12 @@ def create_plot(tsne_data_list, colors, n_images_train, indices, method, technam
             ax_curr.set_yticklabels([])
 
         else:
+            ### Generating plots for discriminative method ###
+
+
             fig_dir = os.path.join(os.getcwd(), 'plots/result_plots/{}/discriminative'.format(args.dataset_name))
+
+            #append colors of pitts (blue), msls (magenta) and test data (green/red)
             train_colors = ['b']*n_images_train[0] + ['m']*n_images_train[1]
             new_colors = train_colors + colors
 
@@ -345,10 +281,8 @@ def create_plot(tsne_data_list, colors, n_images_train, indices, method, technam
             fig.savefig(os.path.join(fig_dir, 'matches_{}_{}.png'.format(method, i, 2)), dpi=2000)
 
             #create weights plot of current tech
-            #ax2 = fig.add_subplot(212)
-            ax_curr = axes.flat[i]
-             #+ ['m']*n_images_train
 
+            ax_curr = axes.flat[i]
 
             ax_curr.scatter(tsne_data[:total_train_img,0], tsne_data[:total_train_img,1], c=train_colors, marker='o', linewidth=.5, s=.5)
 
@@ -370,71 +304,48 @@ def create_plot(tsne_data_list, colors, n_images_train, indices, method, technam
 
 
 
-
-
-
-
-    #Create weights plot
+    #Create weights plot of all techs combined
     fig_weights.colorbar(plot, ax=axes.ravel().tolist())
     plt.setp(plt.gcf().get_axes(), xticks=[], yticks=[])
 
-    #fig_weights.title('train and test descriptors of {} method'.format(method))
+    #save to disk
     fig_weights.savefig(os.path.join(fig_dir, 'weights_{}.png'.format(method, 2)), dpi=1000)
 
 
 
 
 
-n_images_train = 1000
-n_images_test = 0
-img_paths_init = [pitts_path, msls_path]#, tokyo_path, stlucia_path, san_francisco_path]
-#img_paths = [stlucia_path, san_francisco_path, pitts_path, msls_path]
-#img_paths = [tokyo_path, san_francisco_path]
-
-#methods = ['KNN_1', 'KNN_10', 'KNN_100', 'avg', 'dyn_mpf', 'NN_classifier_1']
-#methods = ['KNN_1', 'KNN_100', 'NN_classifier_1', 'NN_classifier_3']
-methods = ['KNN10000']
-
-technames  = ['ResNet - GeM - Pittsburgh',
-    'ResNet - GeM - MSLS', 'VGG16 - GeM - Pittsburgh', 'VGG16 - GeM - MSLS']
-
-
-techniques = load_techniques()
-
-tsne_data_list = []
-#img_paths = []
-datasets_init = ['pitts30k', 'msls']
 
 
 def main():
+    n_images_train = 1000
+    n_images_test = 0
+    img_paths_init = [pitts_path, msls_path]
+
+    methods = [args.method_instance]
+
+    technames  = ['ResNet - GeM - Pittsburgh',
+        'ResNet - GeM - MSLS', 'VGG16 - GeM - Pittsburgh', 'VGG16 - GeM - MSLS']
+
+
+    techniques = load_techniques()
+
+    tsne_data_list = []
+
+    datasets_init = ['pitts30k', 'msls']
+
+
     for i in range(len(methods)):
         for j in range(len(techniques)):
             img_paths = []
             datasets = []
 
-            # if methods[i] == 'GMM' or methods[i] == 'KDE':
-            #     if (j % 2) == 0:
-            #         #img_paths = [img_paths_init[0]]
-            #         img_paths.append(img_paths_init[0])
-            #
-            #         img_paths.append(img_paths_init[1])
-            #
-            #         datasets.append(datasets_init[0])
-            #         datasets.append(datasets_init[1])
-            #
-            #
-            #     else:
-            #         img_paths.append(img_paths_init[1])
-            #         img_paths.append(img_paths_init[0])
-            #         datasets.append(datasets_init[1])
-            #         datasets.append(datasets_init[0])
 
-            #else:
             img_paths.append(img_paths_init[0])
             img_paths.append(img_paths_init[1])
             datasets.append(datasets_init[0])
             datasets.append(datasets_init[1])
-                #img_paths = [img_paths_init[1]]
+
             desc_list_train, img_lengths = load_training_datasets(j, datasets, n_images_train)
 
             desc_list_test, colors, indices = load_test_dataset(n_images_test, j, methods[i])
@@ -443,7 +354,6 @@ def main():
 
             tsne_data_list.append(tsne_data)
 
-        #print('tsne list length: {}'.format(len(tsne_data_list)))
         create_plot(tsne_data_list, colors, img_lengths, indices, methods[i], technames)
 
 if __name__ == "__main__":
