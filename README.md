@@ -30,7 +30,7 @@ The code in this repository can be used to test the ensemble-methods proposed in
 
 In order to run quantative tests, the _ensemble_testing.py_ script is used. 
 
-Testing the ensemble with the KNN(n=1) discriminative method on the st_lucia dataset is done as follows:\
+Testing the ensemble with the KNN(n=1) discriminative method on the st_lucia dataset is done as follows:
 
 `python ensemble_testing.py --dataset_name=st_lucia`
 
@@ -49,16 +49,13 @@ Finally, testing the average voting baseline:
 
 ### Qualitative testing
 
+In order to create the plots that depict the (in)correct matches and the weights given, the _plot_results.py_ script is used. 
+
+As an example: creating the plots for the discriminative method with the KNN(n=100), tested on st lucia, is done as follows:
+
+`python plot_results.py --dataset_name=st_lucia --method_instance=KNN100`
+
+Do note: before the plots of a method instance can be created the quantitative test has to be run first, to obtain and save the _result_array_ that contains the (in)correct matches and weights given.
 
 
 
-## Contributing
-
-Pull requests are welcome. For major changes, please open an issue first
-to discuss what you would like to change.
-
-Please make sure to update tests as appropriate.
-
-## License
-
-[MIT](https://choosealicense.com/licenses/mit/)
