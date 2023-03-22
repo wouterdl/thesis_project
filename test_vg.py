@@ -144,6 +144,7 @@ def test_vg(device, techniques, args, eval_ds, model, test_method="hard_resize",
     if args.efficient_ram_testing:
         return test_efficient_ram_usage(args, eval_ds, model, test_method)
 
+    # Creating array that will store the results per query image (correct/incorrectly matched, weights)
     result_array = np.empty((n_queries, 6))
 
 
@@ -363,16 +364,6 @@ def test_vg(device, techniques, args, eval_ds, model, test_method="hard_resize",
         if ds_aware == True:
 
             query_weights = model(query_features_list)
-            #
-            # # for j in tqdm(range(query_features_list[0].shape[0]), ncols=100):
-            # #     query_features_new = []
-            # for k in range(len(query_features_list)):
-            #     query_features_new.append(query_features_list[k][j])
-            # #print(len(query_features_new))
-            # #print(query_features_new[0].shape)
-            # query_weights.append(model(query_features_new))
-            #     #query_weights.append(model(torch.from_numpy(query_features_list[j]).to(device)))
-
 
             print('QUERY WEIGHTS CHECK:')
             print(len(query_weights))
@@ -389,24 +380,13 @@ def test_vg(device, techniques, args, eval_ds, model, test_method="hard_resize",
 
             faiss_index = faiss.IndexFlatL2(features_dim_list[i])
             print(features_dim_list)
-            #faiss_index_optim = faiss.IndexIVFPQ(faiss_index, features_dim_list[i], nlist, m, 8)
-            #faiss_index_optim.train(ref_features_list[i])
 
-
-            #faiss_index = faiss.index_cpu_to_gpu(res, 0, faiss_index)
 
             faiss_index.add(ref_features_list[0].astype(np.float32))
             del ref_features_list[0]
 
             features_list = []
             print('describing query images')
-            # for inputs, indices in tqdm(queries_dataloader, ncols=100):
-            #     if ds_aware == True:
-            #         features = techniques[i](inputs.to(device))
-            #
-            #         features = features.cpu().numpy()
-            #         features_list.append(features)
-
 
 
 
@@ -459,32 +439,6 @@ def test_vg(device, techniques, args, eval_ds, model, test_method="hard_resize",
 
             predictions[count, :] = sim_function(fuse_type, D_list, max(args.recall_values), args.indiv_tech)
             count += 1
-
-
-        # for inputs, indices in tqdm(queries_dataloader, ncols=100):
-        #     D_list = []
-        #     for j in range(len(D_superlist)):
-        #         #print(D_superlist[j])
-        #         D = D_superlist[j][count]
-        #         #print(D.shape)
-        #         #print(D)
-        #         #print(prediction_superlist[j].shape)
-        #         prediction = prediction_superlist[j][count]
-        #         #print(prediction.shape)
-        #         indices = prediction.argsort()
-        #
-        #         distances = D[indices]/np.sum(D[indices])
-        #         D_list.append(distances)
-        #     if ds_aware == False:
-        #         for k in range(len(D_list)):
-        #             tmp_array = np.array(D_list[k])
-        #
-        #             D_list[k] = tmp_array*query_weights[count][k]
-        #
-        #
-        #
-        #     predictions[count, :] = sim_function(D_list, max(args.recall_values))
-        #     count += 1
 
 
 

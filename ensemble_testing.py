@@ -305,18 +305,13 @@ for i in range(len(tweakpara_list)):
     print('Matching score of decision function {} on dataset {}: {}'.format(weight_function_type, args.dataset_name, matching_score))
 
     if ds_aware == True:
-
+        #saving results array to disk
         np.save('result_arrays/{}{}_{}.npy'.format(args.weight_function, tweakpara_list[i], args.dataset_name), result_array)
-        #print('results array example: {}'.format(result_array[0]))
+
 
     recall_1.append(recalls[0])
     recall_dict['tweakpara_{}'.format(tweakpara_list[i])] = '{}'.format(recall_1[0])
 
-    #print(f"Finished in {str(datetime.now() - start_time)[:-7]}")
-
-    #results = eval_decision('KNN', init_img_dict, 500, techniques)
-
-    #print(results)
 print('recall scores: {}'.format(recall_dict))
 print('total elapsed time: {}'.format(time.time()-start_time))
 print('actual test time: {}'.format(time.time()-test_start_time))
