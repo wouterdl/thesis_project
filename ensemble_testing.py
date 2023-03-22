@@ -300,9 +300,15 @@ for i in range(len(tweakpara_list)):
     #args.test_method = 'single_query'
     test_start_time = time.time()
     print('NUM QUERIES: {}'.format(test_ds.queries_num))
-    recalls, recalls_str, matching_score = test_vg(device, techniques, args, test_ds, weight_function_obj.get_weights ,  args.test_method, pca=None, ds_aware=ds_aware, sim_function=fuse_similarities, load_desc=True, n_queries=test_ds.queries_num, feature_pca=pca_list, generative=generative, fuse_type=args.fuse_type)
+    recalls, recalls_str, matching_score, result_array = test_vg(device, techniques, args, test_ds, weight_function_obj.get_weights ,  args.test_method, pca=None, ds_aware=ds_aware, sim_function=fuse_similarities, load_desc=True, n_queries=test_ds.queries_num, feature_pca=pca_list, generative=generative, fuse_type=args.fuse_type)
     print(f"Recalls on {test_ds}: {recalls_str}")
     print('Matching score of decision function {} on dataset {}: {}'.format(weight_function_type, args.dataset_name, matching_score))
+
+    if ds_aware == True:
+
+        np.save('result_arrays/{}{}_{}.npy'.format(args.weight_function, tweakpara_list[i], args.dataset_name), result_array)
+        #print('results array example: {}'.format(result_array[0]))
+
     recall_1.append(recalls[0])
     recall_dict['tweakpara_{}'.format(tweakpara_list[i])] = '{}'.format(recall_1[0])
 

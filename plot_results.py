@@ -18,7 +18,7 @@ from torch.utils.data.dataset import Subset
 
 import sys
 sys.path.append("../vg_bench")
-from parser_vg import parse_arguments
+from parser_new import parse_arguments
 from test_vg import test_vg
 from model import network
 from datasets_ws import BaseDataset
@@ -51,67 +51,67 @@ eynsham_path = os.path.join(os.getcwd(), 'datasets/eynsham/images/test/database/
 san_francisco_path = os.path.join(os.getcwd(), 'datasets/san_francisco/images/test/database/')
 
 
-def load_images(img_paths, n_images):
-    img_lengths = []
-    img_list = []
-    for value in img_paths:
-        print('loading images from folder: {}'.format(value))
-        count = 0
+# def load_images(img_paths, n_images):
+#     img_lengths = []
+#     img_list = []
+#     for value in img_paths:
+#         print('loading images from folder: {}'.format(value))
+#         count = 0
+#
+#         tmp_list = []
+#         for filename in glob.glob(os.path.join(value, "*.jpg")):
+#             tmp_list.append(filename)
+#
+#         random.shuffle(tmp_list)
+#
+#         if len(tmp_list) > n_images:
+#             tmp_list = tmp_list[:n_images]
+#
+#         for filename in tmp_list:
+#             im = np.asarray(Image.open(filename).resize((640,480)).convert('RGB'))
+#             print(im.shape)
+#             #im = im.flatten()
+#             #print(im.shape)
+#             im_tf = base_transform(im)#.permute(2, 0, 1)
+#             img_list.append(im_tf)
+#             count += 1
+#
+#         img_lengths.append(count)
+#     print('DIMENSION TEST, TRAIN IMGS: {}'.format(img_list[0].shape))
+#     #for i in range(len(img_lengths)):
+#             #print('Loaded {} images of dataset {}'.format(img_lengths[i], img_paths[i]))
+#     return img_list, img_lengths
 
-        tmp_list = []
-        for filename in glob.glob(os.path.join(value, "*.jpg")):
-            tmp_list.append(filename)
-
-        random.shuffle(tmp_list)
-
-        if len(tmp_list) > n_images:
-            tmp_list = tmp_list[:n_images]
-
-        for filename in tmp_list:
-            im = np.asarray(Image.open(filename).resize((640,480)).convert('RGB'))
-            print(im.shape)
-            #im = im.flatten()
-            #print(im.shape)
-            im_tf = base_transform(im)#.permute(2, 0, 1)
-            img_list.append(im_tf)
-            count += 1
-
-        img_lengths.append(count)
-    print('DIMENSION TEST, TRAIN IMGS: {}'.format(img_list[0].shape))
-    #for i in range(len(img_lengths)):
-            #print('Loaded {} images of dataset {}'.format(img_lengths[i], img_paths[i]))
-    return img_list, img_lengths
-
-def apply_descriptor(descriptor, img_list, descriptor_arg):
-    for i in range(len(img_list)):
-        #print(type(img_list[i]))
-        if descriptor_arg == 'resnet18' or descriptor_arg == 'resnet18_NV_pitts' or descriptor_arg == 'resnet18_trained' or descriptor_arg == 'resnet18_NV_msls':
-            #print('TESTSETSTSTE')
-            #print('image: {}'.format(img_list[i].shape))
-            img = torch.FloatTensor(img_list[i]).to(device)
-            if img.dim() > 2:
-                #img = torch.permute(img, (2, 0, 1))
-                print('DIMENSION TEST, TRAIN IMGS: {}'.format(img.size()))
-            if img.dim() < 3:
-                img = torch.unsqueeze(img, 0)
-            img = torch.unsqueeze(img, 0)
-            if descriptor_arg == 'resnet18_trained':
-                sigmoid = torch.nn.Sigmoid()
-
-                img_list[i] = sigmoid(descriptor(img)).squeeze().cpu().detach().numpy()
-            else:
-                img_list[i] = descriptor(img).squeeze().cpu().detach().numpy()#, channel_axis=-1)
-        #print(img_list[i].shape)
-        if descriptor_arg == 'hog':
-            img_list[i] = descriptor(img_list[i], channel_axis=-1)
-
-        else:
-            img_list[i] = img_list[i].flatten()
-
-    #img_list = np.array(img_list)
-    print(type(img_list[0]))
-    print('DIMENSION TEST, TRAIN DESCRIPTORS: {}'.format(img_list[0].shape))
-    return img_list
+# def apply_descriptor(descriptor, img_list, descriptor_arg):
+#     for i in range(len(img_list)):
+#         #print(type(img_list[i]))
+#         if descriptor_arg == 'resnet18' or descriptor_arg == 'resnet18_NV_pitts' or descriptor_arg == 'resnet18_trained' or descriptor_arg == 'resnet18_NV_msls':
+#             #print('TESTSETSTSTE')
+#             #print('image: {}'.format(img_list[i].shape))
+#             img = torch.FloatTensor(img_list[i]).to(device)
+#             if img.dim() > 2:
+#                 #img = torch.permute(img, (2, 0, 1))
+#                 print('DIMENSION TEST, TRAIN IMGS: {}'.format(img.size()))
+#             if img.dim() < 3:
+#                 img = torch.unsqueeze(img, 0)
+#             img = torch.unsqueeze(img, 0)
+#             if descriptor_arg == 'resnet18_trained':
+#                 sigmoid = torch.nn.Sigmoid()
+#
+#                 img_list[i] = sigmoid(descriptor(img)).squeeze().cpu().detach().numpy()
+#             else:
+#                 img_list[i] = descriptor(img).squeeze().cpu().detach().numpy()#, channel_axis=-1)
+#         #print(img_list[i].shape)
+#         if descriptor_arg == 'hog':
+#             img_list[i] = descriptor(img_list[i], channel_axis=-1)
+#
+#         else:
+#             img_list[i] = img_list[i].flatten()
+#
+#     #img_list = np.array(img_list)
+#     print(type(img_list[0]))
+#     print('DIMENSION TEST, TRAIN DESCRIPTORS: {}'.format(img_list[0].shape))
+#     return img_list
 
 
 def load_techniques():
@@ -382,84 +382,6 @@ def create_plot(tsne_data_list, colors, n_images_train, indices, method, technam
     fig_weights.savefig(os.path.join(fig_dir, 'weights_{}.png'.format(method, 2)), dpi=1000)
 
 
-    #
-    #     if 'KDE' in method or 'GMM' in method:
-    #         new_colors = ['b']*n_images_train[i % 0] + colors
-    #
-    #     else:
-    #         new_colors = ['b']*n_images_train[0] + ['m']*n_images_train[1] + colors
-    #
-    #     fig = plt.figure()
-    #     ax = fig.add_subplot(111)
-    #
-    #     if (i % 2) == 0:
-    #         train_handle = mlines.Line2D([], [], color='blue', marker='.', linestyle='None',
-    #                           markersize=10, label='Pittsburgh')
-    #
-    #
-    #         #tsne_data = np.concatenate((tsne_data[0:n_images_train], tsne_data[(2*n_images_train):]))
-    #         train_colors = ['b']*n_images_train[0]
-    #
-    #     else:
-    #         train_handle = mlines.Line2D([], [], color='blue', marker='.', linestyle='None', markersize=10, label='MSLS')
-    #         #tsne_data = np.concatenate((tsne_data[n_images_train:2*n_images_train], tsne_data[(2*n_images_train):]))
-    #         train_colors = ['m']*n_images_train[1]
-    #     train_colors = ['b']*n_images_train[0] + ['m']*n_images_train[1]
-    #     #msls_handle = mlines.Line2D([], [], color='m', marker='.', linestyle='None',
-    #     #                      markersize=10, label='MSLS')
-    #     test_correct_handle = mlines.Line2D([], [], color='green', marker='.', linestyle='None',
-    #                           markersize=10, label='Correct matches')
-    #     test_incorrect_handle = mlines.Line2D([], [], color='red', marker='.', linestyle='None',
-    #                           markersize=10, label='Incorrect matches')
-    #     ax.scatter(tsne_data[:,0], tsne_data[:,1], c=new_colors, marker='o', linewidth=1, s=2)
-    #
-    #     custom_dots = [ Line2D([0], [0], marker='o', color='w', label='Pitts30k', markerfacecolor='b'), Line2D([0], [0], marker='o', color='w', label='MSLS', markerfacecolor='m'),
-    #                     Line2D([0], [0], marker='o', color='w', label='Correct matches', markerfacecolor='g'), Line2D([0], [0], marker='o', color='w', label='Incorrect matches', markerfacecolor='r')]
-    #
-    #     ax.legend(handles=custom_dots)
-    #
-    #     fig.savefig(os.path.join(fig_dir, 'matches_{}_{}.png'.format(method, i, 2)), dpi=2000)
-    #
-    #
-    #
-    #     #ax2 = fig.add_subplot(212)
-    #     ax_curr = axes.flat[i]
-    #      #+ ['m']*n_images_train
-    #
-    #
-    #     ax_curr.scatter(tsne_data[:1*n_images_train,0], tsne_data[:1*n_images_train,1], c=train_colors, marker='o', linewidth=.5, s=.5)
-    #
-    #
-    #     result_array = np.load('result_arrays/{}_{}.npy'.format(method, args.dataset_name))
-    #     result_array = result_array[result_array[:, 0].argsort()]
-    #     print('result array example: {}'.format(result_array[0]))
-    #
-    #     gradient_values = []
-    #
-    #     for j in range(len(indices)):
-    #         gradient_values.append(result_array[indices[j], 2+i])
-    #
-    #     plot = ax_curr.scatter(tsne_data[1*n_images_train:,0], tsne_data[1*n_images_train:,1], c=gradient_values, cmap='autumn_r', marker='o', linewidth=0.5, s=0.5)#, vmin=0., vmax=1.)
-    #     ax_curr.set_title(technames[i], fontsize=10)
-    #     ax_curr.set_xticklabels([])
-    #     ax_curr.set_yticklabels([])
-    #     #ax_curr.axis('off')
-    #
-    #         #plot.gca().axes.get_yaxis().set_visible(False)
-    #         #plot.gca().axes.get_xaxis().set_visible(False)
-    #         #ax_curr.title('{}'.format(technames[i]))
-    #         #plt.colorbar(plot2, ax=ax2)
-    #         #fig.savefig(os.path.join(fig_dir, '{}_{}'.format(method, technr)), dpi=2000)
-    #
-    #
-    # fig_weights.colorbar(plot, ax=axes.ravel().tolist())
-    # plt.setp(plt.gcf().get_axes(), xticks=[], yticks=[])
-    #
-    # #fig_weights.title('train and test descriptors of {} method'.format(method))
-    # fig_weights.savefig(os.path.join(fig_dir, 'weights_{}.png'.format(method, 2)), dpi=1000)
-    #
-    # #else:
-
 
 
 
@@ -471,11 +393,11 @@ img_paths_init = [pitts_path, msls_path]#, tokyo_path, stlucia_path, san_francis
 
 #methods = ['KNN_1', 'KNN_10', 'KNN_100', 'avg', 'dyn_mpf', 'NN_classifier_1']
 #methods = ['KNN_1', 'KNN_100', 'NN_classifier_1', 'NN_classifier_3']
-methods = ['KDE_0.01']
+methods = ['KNN10000']
 
 technames  = ['ResNet - GeM - Pittsburgh',
     'ResNet - GeM - MSLS', 'VGG16 - GeM - Pittsburgh', 'VGG16 - GeM - MSLS']
-#methods = ['tech1', 'tech2']
+
 
 techniques = load_techniques()
 
@@ -483,41 +405,46 @@ tsne_data_list = []
 #img_paths = []
 datasets_init = ['pitts30k', 'msls']
 
-for i in range(len(methods)):
-    for j in range(len(techniques)):
-        img_paths = []
-        datasets = []
 
-        if methods[i] == 'GMM' or methods[i] == 'KDE':
-            if (j % 2) == 0:
-                #img_paths = [img_paths_init[0]]
-                img_paths.append(img_paths_init[0])
+def main():
+    for i in range(len(methods)):
+        for j in range(len(techniques)):
+            img_paths = []
+            datasets = []
 
-                img_paths.append(img_paths_init[1])
+            # if methods[i] == 'GMM' or methods[i] == 'KDE':
+            #     if (j % 2) == 0:
+            #         #img_paths = [img_paths_init[0]]
+            #         img_paths.append(img_paths_init[0])
+            #
+            #         img_paths.append(img_paths_init[1])
+            #
+            #         datasets.append(datasets_init[0])
+            #         datasets.append(datasets_init[1])
+            #
+            #
+            #     else:
+            #         img_paths.append(img_paths_init[1])
+            #         img_paths.append(img_paths_init[0])
+            #         datasets.append(datasets_init[1])
+            #         datasets.append(datasets_init[0])
 
-                datasets.append(datasets_init[0])
-                datasets.append(datasets_init[1])
-
-
-            else:
-                img_paths.append(img_paths_init[1])
-                img_paths.append(img_paths_init[0])
-                datasets.append(datasets_init[1])
-                datasets.append(datasets_init[0])
-
-        else:
+            #else:
             img_paths.append(img_paths_init[0])
             img_paths.append(img_paths_init[1])
             datasets.append(datasets_init[0])
             datasets.append(datasets_init[1])
-            #img_paths = [img_paths_init[1]]
-        desc_list_train, img_lengths = load_training_datasets(j+2, datasets, n_images_train)
+                #img_paths = [img_paths_init[1]]
+            desc_list_train, img_lengths = load_training_datasets(j, datasets, n_images_train)
 
-        desc_list_test, colors, indices = load_test_dataset(n_images_test, j+2, methods[i])
+            desc_list_test, colors, indices = load_test_dataset(n_images_test, j, methods[i])
 
-        tsne_data = apply_tsne(desc_list_train, desc_list_test, img_lengths, methods[i])
+            tsne_data = apply_tsne(desc_list_train, desc_list_test, img_lengths, methods[i])
 
-        tsne_data_list.append(tsne_data)
+            tsne_data_list.append(tsne_data)
 
-    #print('tsne list length: {}'.format(len(tsne_data_list)))
-    create_plot(tsne_data_list, colors, img_lengths, indices, methods[i], technames)
+        #print('tsne list length: {}'.format(len(tsne_data_list)))
+        create_plot(tsne_data_list, colors, img_lengths, indices, methods[i], technames)
+
+if __name__ == "__main__":
+    main()

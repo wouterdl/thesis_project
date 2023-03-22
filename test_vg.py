@@ -557,10 +557,6 @@ def test_vg(device, techniques, args, eval_ds, model, test_method="hard_resize",
             else:
                 if i == 0:
                     result_array[j, 0], result_array[j, 1] = j, 0
-    if ds_aware == True:
-
-        np.save('result_arrays/KDE_0.01_{}.npy'.format(args.dataset_name), result_array)
-        print('results array example: {}'.format(result_array[0]))
 
     # Divide by the number of queries*100, so the recalls are in percentages
     print('total recalls : {}'.format(recalls))
@@ -569,7 +565,7 @@ def test_vg(device, techniques, args, eval_ds, model, test_method="hard_resize",
 
     print('total test function time: {}'.format(time.time()-test_start_time))
     print('test function time excl. feature extraction/loading: {}'.format(time.time()-feature_calc_time))
-    return recalls, recalls_str, matching_score
+    return recalls, recalls_str, matching_score, result_array
 
 
 def top_n_voting(topn, predictions, distances, maj_weight):
