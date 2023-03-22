@@ -91,11 +91,13 @@ def parse_arguments():
 
     #New parameters for domain shift-aware VPR
     parser.add_argument("--weight_function", type=str, default="KNN", help="Possible arguments: KNN, NN_classifier, KDE, GMM")
-    parser.add_argument("--ds_aware", type=bool, default=True, help="_")
+    #parser.add_argument("--ds_aware", type=bool, default=True, help="_")
+    parser.add_argument('--ds_aware', action=argparse.BooleanOptionalAction)
+    parser.set_defaults(ds_aware=True)
     parser.add_argument("--tweakpara_list", type=str, default='1', help="_")
     #parser.add_argument('--tweakpara_list','--tweakpara_list', nargs='+', type=int, help="_", default=[1])
     parser.add_argument("--indiv_tech", type=int, default=0, help="_")
-    parser.add_argument("--fuse_type", type=str, default="avg_voting", help="Possible arguments: avg_voting, individual, max_voting, max_score, dyn_mpf, random_pair")
+    parser.add_argument("--fuse_type", type=str, default="avg_score", help="Possible arguments: avg_score individual, max_voting, max_score, dyn_mpf, random_pair")
 
     args = parser.parse_args()
 

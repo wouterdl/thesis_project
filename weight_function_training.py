@@ -95,26 +95,17 @@ def load_techniques():
     return techniques
 
 class DecisionDataset(data.Dataset):
-  """
-  Pytorch Dataset class that creates a dataset used to train weight functions
-  
- 
-  """
-  
-  
-  
     def __init__(self, data_path_list):
         self.img_path_list = []
         self.labels = []
 
         for i in range(len(data_path_list)):
-            
             assert(os.path.exists(data_path_list[i]))
 
             print(data_path_list[i])
             if 'msls' in data_path_list[i]:
                 count = 0
-                filenames = self.get_subset(data_path_list[i], 2000)
+                filenames = self.get_subset(data_path_list[i], 20)
                 for filename in filenames:
                     # if (count % 10) == 0:
                     self.labels.append(1)
@@ -122,7 +113,7 @@ class DecisionDataset(data.Dataset):
                     count+=1
 
             elif 'pitts30k' in data_path_list[i]:
-                filenames = self.get_subset(data_path_list[i], 200)
+                filenames = self.get_subset(data_path_list[i], 2)
                 for filename in filenames:
                     self.labels.append(0)
                     self.img_path_list.append(filename)
@@ -223,25 +214,6 @@ class DecisionDataset(data.Dataset):
 
 
 def get_weight_functions(data_path_list, tweakpara_list, decision_func_name, techniques, pca_list, feature_dims, dataset_names):
-    """
-    Function that loads/trains weight functions
-    
-    Input:
-    data_path_list      list, contains the data paths of the training datasets
-    tweakpara_list      list, contains hyperparameter values for which weight functions need to be obtained
-    decision_func_name  string, type of weight function used
-    techniques          list, contains the techniques of the ensemble
-    pca_list            list, contains the pca models that can be used
-    feature_dims        list, contains the descriptor dimensionality of all techniques
-    dataset_names       list, names of the training datasets
-    
-    
-    Output:
-    decision_function_list    list, contains the weight functions
-    mean_desc_list            list, contains the mean of the training desciptors in all feature spaces
-    """
-  
-  
     decision_function_list = []
     training_needed = False
     mean_desc_list = []
@@ -253,23 +225,21 @@ def get_weight_functions(data_path_list, tweakpara_list, decision_func_name, tec
         tech_decision_function_list = []
 
         if decision_func_name == 'KNN' or decision_func_name == 'NN_classifier':
-            ### With discriminative methods, both training ref sets are used ###
             training_datasets = dataset_names
             features_list = [None, None]
             data_path_list_new = data_path_list
 
         if decision_func_name == 'KDE' or decision_func_name == 'GMM':
-          ### With generative methods, only one training ref set is used ###
+
+
 
             features_list = [None]
             if (i % 2) == 0:
-                ### for techs 0 and 2, pitts is used ###
                 training_datasets = [dataset_names[0]]
                 data_path_list_new = [data_path_list[0]]
                 # if i < 2:
                 #     pca = pca_list[0][i]
             if (i % 2) != 0:
-                ### for techs 1 and 3, MSLS is used ###
                 training_datasets = [dataset_names[1]]
                 data_path_list_new = [data_path_list[1]]
                 # if i < 2:
@@ -282,38 +252,31 @@ def get_weight_functions(data_path_list, tweakpara_list, decision_func_name, tec
 
         for j in range(len(tweakpara_list)):
             #descriptor_path = 'descriptors/'
-            decision_function_path = 'saved_models/{}/{}_tech_{}_tweakpara_{}.pkl'.format(decision_func_name, decision_func_name, i+2, tweakpara_list[j])
-            decision_function_path_NN = 'saved_models/{}/{}_tech_{}_tweakpara_{}.pth'.format(decision_func_name, decision_func_name, i+2, tweakpara_list[j])
+            decision_function_path = 'saved_models/{}/{}_tech_{}_tweakpara_{}.pkl'.format(decision_func_name, decision_func_name, i, tweakpara_list[j])
+            decision_function_path_NN = 'saved_models/{}/{}_tech_{}_tweakpara_{}.pth'.format(decision_func_name, decision_func_name, i, tweakpara_list[j])
             #assert(os.path.exists(decision_function_path))
-            
             if os.path.exists(decision_function_path):
-                ### check if weight function can be loaded from disk ###
-                print('loaded {} for tech {} and tweakpara {}'.format(decision_func_name, i+2, tweakpara_list[j]))
+                print('loaded {} for tech {} and tweakpara {}'.format(decision_func_name, i, tweakpara_list[j]))
                 tech_decision_function_list.append(joblib.load(decision_function_path))
             if os.path.exists(decision_function_path_NN):
-                ### check if weight function can be loaded from disk, in the case of NN classifier ###
-                print('loaded {} for tech {} and tweakpara {}'.format(decision_func_name, i+2, tweakpara_list[j]))
+                print('loaded {} for tech {} and tweakpara {}'.format(decision_func_name, i, tweakpara_list[j]))
                 model = initiate_classifier(feature_dims[i], 2 ,  tweakpara_list[j])
                 model.load_state_dict(torch.load(decision_function_path_NN))
                 model.eval()
                 tech_decision_function_list.append(model)
 
             else:
-                ### if weight function for tech i and hyperparameter j cannot be loaded, train it ###
                 labels = []
                 for k in range(len(training_datasets)):
-                   
-                    descriptor_path = 'descriptors/{}_TRAIN_descriptors_tech{}.npy'.format(training_datasets[k], i+2)
+                    descriptor_path = 'descriptors/{}_TRAIN_descriptors_tech{}.npy'.format(training_datasets[k], i)
                     if isinstance(features_list[k], np.ndarray):
-                        ### check if descriptors of training ref set k are still in memory ###
-                        print('{} train descriptors (tech {}) still in memory'.format(training_datasets[k], i+2))
+                        print('{} train descriptors (tech {}) still in memory'.format(training_datasets[k], i))
                         new_labels = [k]*(features_list[k].shape[0])
                         labels.extend(new_labels)
 
                     elif os.path.exists(descriptor_path):
-                        ### Check if descriptors of training ref set k can be loaded from disk ###
                         features_list[k] = np.load(descriptor_path)
-                        print('Loaded {} train descriptors (tech {}) from disk'.format(training_datasets[k], i+2))
+                        print('Loaded {} train descriptors (tech {}) from disk'.format(training_datasets[k], i))
                         new_labels = [k]*(features_list[k].shape[0])
                         #new_labels = [1]*(features_list[k].shape[0])
                         labels.extend(new_labels)
@@ -321,7 +284,6 @@ def get_weight_functions(data_path_list, tweakpara_list, decision_func_name, tec
 
 
                     else:
-                        ### Otherwise, generate training descriptors ###
 
                         print('test1')
                         #time.sleep(5)
@@ -356,27 +318,23 @@ def get_weight_functions(data_path_list, tweakpara_list, decision_func_name, tec
 
                         np.save(descriptor_path, features)
                         del features
-                        print('Generated {} train descriptors (tech {})'.format(training_datasets[k], i+2))
+                        print('Generated {} train descriptors (tech {})'.format(training_datasets[k], i))
 
 
 
 
                 if decision_func_name == 'KNN':
-                    ### Concatenate features of both training reference sets ###
                     features_array = np.concatenate((features_list[0], features_list[1]), axis=0)
                     print(features_array.shape)
                     print(len(labels))
-                    ### Use features and labels to train KNN ###
                     model = KNeighborsClassifier(n_neighbors=tweakpara_list[j], leaf_size=100).fit(features_array, labels)
                     #joblib.dump(model,  decision_function_path)
-                    ### Append trained KNN model to list of weight functions for tech i ###
                     tech_decision_function_list.append(model)
 
 
                 if decision_func_name == 'NN_classifier':
                     features_array = np.concatenate((features_list[0], features_list[1]), axis=0)
                     print(features_array.shape)
-                    ### Train model using the get_NN_classifier function ###
                     model = get_NN_classifier(feature_dims[i], tweakpara_list[j], features_array, labels)
                     torch.save(model.state_dict(), decision_function_path_NN)
                     #print('NOT IMPLEMENTED YET')
@@ -384,7 +342,6 @@ def get_weight_functions(data_path_list, tweakpara_list, decision_func_name, tec
 
                 if decision_func_name == 'KDE':
                     print(features_list[0].shape)
-                    ### Train KDE model using the single corresponding training ref set ###
                     model = KernelDensity(kernel='gaussian', bandwidth=tweakpara_list[j], leaf_size=20).fit(features_list[0])
                     #joblib.dump(model,  decision_function_path)
                     tech_decision_function_list.append(model)
@@ -396,8 +353,7 @@ def get_weight_functions(data_path_list, tweakpara_list, decision_func_name, tec
                     #joblib.dump(model,  decision_function_path)
                     tech_decision_function_list.append(model)
                     mean_desc_list.append(np.mean(features_list[0], 0))
-                    
-            ### Combine the weight functions for each feature space into a list ###
+
             decision_function_list.append(tech_decision_function_list)
 
 

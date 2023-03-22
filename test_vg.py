@@ -135,27 +135,6 @@ def test_efficient_ram_usage(args, eval_ds, model, test_method="hard_resize"):
 
 
 def test_vg(device, techniques, args, eval_ds, model, test_method="hard_resize", pca=None, ds_aware=False, sim_function=None, n_queries=1000, load_desc=True, feature_pca=None, generative=False, fuse_type='avg_voting'):
-    """
-    The main testing function for quantitative testing. Altered from Deep Visual Geo-Localization Benchmark.
-    
-    Added/Changed inputs:
-    techniques          list of the techniques of the ensemble
-    ds_aware            boolean, denotes wether a domain shift-aware method is used
-    sim_function        deprecated
-    n_queries           deprecated
-    load_desc           boolean, wether previously saved descriptors are loaded if possible
-    feature_pca         list containing the pca models that can be applied
-    generative          boolean, if the method is generative or discriminative
-    fuse_type           string, how the similarity vectors are fused
-    
-    Outputs:
-    recalls             dict, the recall scores of the tested method on the test dataset
-    recalls_str         recall values as string
-    matching_score      deprecated
-    
-    """
-    
-    
     test_start_time = time.time()
     """Compute features of the given dataset and compute the recalls."""
 
@@ -164,8 +143,7 @@ def test_vg(device, techniques, args, eval_ds, model, test_method="hard_resize",
     print('DEVICE: {}'.format(args.device))
     if args.efficient_ram_testing:
         return test_efficient_ram_usage(args, eval_ds, model, test_method)
-    
-    ### Create array that can save (in)correct matches and weights ###
+
     result_array = np.empty((n_queries, 6))
 
 
@@ -209,8 +187,6 @@ def test_vg(device, techniques, args, eval_ds, model, test_method="hard_resize",
         #features_dim_new = [1024, 1024, 256, 256, 512, 512]
         features_dim_new = [256, 256, 512, 512]
         if load_desc == True:
-            ### If descriptors are allowed to be loaded ###
-            
 
             for i in range(len(techniques)):
                 ref_features_done = False
@@ -218,19 +194,19 @@ def test_vg(device, techniques, args, eval_ds, model, test_method="hard_resize",
                 #features_dim_list.append(get_output_shape(techniques[i], (1, 3, 100, 100))[1])
                 tmp_features_dim_list.append(get_output_shape(techniques[i], (1, 3, 100, 100))[1])
 
-                ### Load reference descriptors if possible ###
-                if os.path.exists('descriptors/{}_REF_descriptors_tech{}.npy'.format(args.dataset_name, i+2)) == True:
-                    ref_features = np.load('descriptors/{}_REF_descriptors_tech{}.npy'.format(args.dataset_name, i+2)).astype(np.float32)
+                #Load reference descriptors if possible
+                if os.path.exists('descriptors/{}_REF_descriptors_tech{}.npy'.format(args.dataset_name, i)) == True:
+                    ref_features = np.load('descriptors/{}_REF_descriptors_tech{}.npy'.format(args.dataset_name, i)).astype(np.float32)
                     ref_features_list.append(ref_features)
                     features_dim_list.append(ref_features.shape[1])
-                    print('Loaded existing reference descriptors of {} (model {})'.format(args.dataset_name, i+2))
+                    print('Loaded existing reference descriptors of {} (model {})'.format(args.dataset_name, i))
                     ref_features_done = True
 
 
                 if test_method == "nearest_crop" or test_method == 'maj_voting':
                     all_features = np.empty((5 * eval_ds.queries_num + eval_ds.database_num, features_dim_new[i]), dtype="float32")
 
-                ### If reference descriptors cannot be loaded: generate them ###
+                #If reference descriptors cannot be loaded: calculate them
                 if ref_features_done == False:
                     #all_features = np.empty((len(eval_ds), args.features_dim), dtype="float32")
                     all_features = np.empty((eval_ds.database_num, features_dim_new[i]), dtype="float32")
@@ -271,19 +247,19 @@ def test_vg(device, techniques, args, eval_ds, model, test_method="hard_resize",
 
                     ref_features_list.append(all_features)
 
-                    ### If newly generated, save ref descriptors to disk
-                    np.save('descriptors/{}_REF_descriptors_tech{}.npy'.format(args.dataset_name, i+2), all_features)
-                    print('saved reference features of tech {} on dataset {}'.format(i+2, args.dataset_name))
 
-                ### Load Query descriptors from disk if possible ###
-                if os.path.exists('descriptors/{}_QUERY_descriptors_tech{}.npy'.format(args.dataset_name, i+2)) == True:
-                    query_features = np.load('descriptors/{}_QUERY_descriptors_tech{}.npy'.format(args.dataset_name, i+2)).astype(np.float32)
+                    np.save('descriptors/{}_REF_descriptors_tech{}.npy'.format(args.dataset_name, i), all_features)
+                    print('saved reference features of tech {} on dataset {}'.format(i, args.dataset_name))
+
+                #Load Query descriptors
+                if os.path.exists('descriptors/{}_QUERY_descriptors_tech{}.npy'.format(args.dataset_name, i)) == True:
+                    query_features = np.load('descriptors/{}_QUERY_descriptors_tech{}.npy'.format(args.dataset_name, i)).astype(np.float32)
                     query_features_list.append(query_features)
 
-                    print('Loaded existing query descriptors of {} (model {})'.format(args.dataset_name, i+2))
+                    print('Loaded existing query descriptors of {} (model {})'.format(args.dataset_name, i))
                     query_features_done = True
 
-                ### If Query descriptors cannot be loaded: generate them ### 
+                #If Query descriptors cannot be loaded: calculate them
                 if query_features_done == False:
                     #all_features = np.empty((len(eval_ds), args.features_dim), dtype="float32")
 
@@ -319,8 +295,8 @@ def test_vg(device, techniques, args, eval_ds, model, test_method="hard_resize",
 
 
                     print(all_features.shape)
-                    #np.save('descriptors/{}_QUERY_descriptors_tech{}.npy'.format(args.dataset_name, i+2), all_features)
-                    print('saved query features of tech {} on dataset {}'.format(i+2, args.dataset_name))
+                    np.save('descriptors/{}_QUERY_descriptors_tech{}.npy'.format(args.dataset_name, i), all_features)
+                    print('saved query features of tech {} on dataset {}'.format(i, args.dataset_name))
 
 
 
@@ -385,7 +361,6 @@ def test_vg(device, techniques, args, eval_ds, model, test_method="hard_resize",
         query_weights = []
 
         if ds_aware == True:
-            ### If a domain shift-aware method is used, calculate the weights
 
             query_weights = model(query_features_list)
             #
@@ -402,10 +377,7 @@ def test_vg(device, techniques, args, eval_ds, model, test_method="hard_resize",
             print('QUERY WEIGHTS CHECK:')
             print(len(query_weights))
             print(len(query_weights[0]))
-        
         for i in range(len(techniques)):
-            ### For each feature space, create a faiss index with the correct dimensionality
-            
             print('creating faiss index for technique {}'.format(i))
 
             nlist = 100
@@ -422,8 +394,7 @@ def test_vg(device, techniques, args, eval_ds, model, test_method="hard_resize",
 
 
             #faiss_index = faiss.index_cpu_to_gpu(res, 0, faiss_index)
-            
-            ### Add the reference features to the faiss index and remove original ref features from memory ###
+
             faiss_index.add(ref_features_list[0].astype(np.float32))
             del ref_features_list[0]
 
@@ -439,7 +410,7 @@ def test_vg(device, techniques, args, eval_ds, model, test_method="hard_resize",
 
 
 
-            ### Perform similarity search in the feature space of technique i ###
+
             print('performing similarity search')
             features_array = np.squeeze(np.array(query_features_list[i].astype(np.float32)))
             print(features_array.shape)
@@ -448,8 +419,7 @@ def test_vg(device, techniques, args, eval_ds, model, test_method="hard_resize",
             print('completed similarity search')
             #indices = predictions[0].argsort()
             #distances = distances[0][indices]/np.sum(distances[0][indices])
-            
-            ### Append the predictions and distances of this feature space to the superlist ###
+
             prediction_superlist.append(predictions_tmp)
             D_superlist.append(distances)
         print('D_SUPERLIST:')
@@ -459,49 +429,64 @@ def test_vg(device, techniques, args, eval_ds, model, test_method="hard_resize",
         count = 0
 
         for i in tqdm(range(eval_ds.queries_num), ncols=100):
-            ### Loop to calculate final predictions using weighted similarity vectors ###
-            
-            
             D_list = []
             for j in range(len(D_superlist)):
-                
-                ### Get the normalized distances for all reference descriptors in feature space j
                 indices = prediction_superlist[j][i].argsort()
                 distances_D = D_superlist[j][i][indices]/np.sum(D_superlist[j][i][indices])
                 #print(len(distances_D))
 
                 if ds_aware == False:
-                    ### If no domain shift-aware method is used, the similarity vector is not multiplied with a weight ###
                     weighted_D = distances_D
                     result_array[i, 2+j] = 0
                 if ds_aware == True:
                     if generative == True:
-                        ### For generative methods, the similarity vector is weighted using the weight for query desc i in feature space j
                         weighted_D = distances_D*query_weights[j][i]
-                        ### This weight is also saved to the result_array ###
                         result_array[i, 2+j] = query_weights[j][i]
                     if generative == False:
                         #print((j%2))
                         #print(len(query_weights[i]))
                         #print(query_weights[i][(j % 2)])
-                        
-                        ### For discriminative methods the calculated weights are the averaged accross feature spaces ###
-                        ### NOTE: currently hard-coded for ensemble of 4 techniques ###
-                        weight = (query_weights[0][i] + query_weights[2][i]  + query_weights[1][i] + query_weights[3][i] )/len(techniques)
+
+                        weight = (query_weights[0][i] + query_weights[2][i]  + query_weights[1][i] + query_weights[3][i] )/4
 
 
 
 
                         #print(weight)
-                        ### Similarity vector multiplied with the weight of the corresponding training dataset ###
                         weighted_D = distances_D*weight[(j%2)]
-                        ### The weight calculated for query i in feature space j is saved to result_array ###
                         result_array[i, 2+j] = query_weights[j][i][(j%2)]
                 D_list.append(weighted_D)
-            
-            ### Similarity vectors are fused using sim_function() ###
-            predictions[count, :] = sim_function(fuse_type, D_list, max(args.recall_values))
+
+            predictions[count, :] = sim_function(fuse_type, D_list, max(args.recall_values), args.indiv_tech)
             count += 1
+
+
+        # for inputs, indices in tqdm(queries_dataloader, ncols=100):
+        #     D_list = []
+        #     for j in range(len(D_superlist)):
+        #         #print(D_superlist[j])
+        #         D = D_superlist[j][count]
+        #         #print(D.shape)
+        #         #print(D)
+        #         #print(prediction_superlist[j].shape)
+        #         prediction = prediction_superlist[j][count]
+        #         #print(prediction.shape)
+        #         indices = prediction.argsort()
+        #
+        #         distances = D[indices]/np.sum(D[indices])
+        #         D_list.append(distances)
+        #     if ds_aware == False:
+        #         for k in range(len(D_list)):
+        #             tmp_array = np.array(D_list[k])
+        #
+        #             D_list[k] = tmp_array*query_weights[count][k]
+        #
+        #
+        #
+        #     predictions[count, :] = sim_function(D_list, max(args.recall_values))
+        #     count += 1
+
+
 
 
     if test_method == 'nearest_crop':
@@ -572,9 +557,8 @@ def test_vg(device, techniques, args, eval_ds, model, test_method="hard_resize",
             else:
                 if i == 0:
                     result_array[j, 0], result_array[j, 1] = j, 0
-                    
     if ds_aware == True:
-        ### If ds_aware is  true, result_array is saved to disk ###
+
         np.save('result_arrays/KDE_0.01_{}.npy'.format(args.dataset_name), result_array)
         print('results array example: {}'.format(result_array[0]))
 

@@ -227,15 +227,15 @@ pca_list = []
 
 
 
-#weight_function_type = args.weight_function
-weight_function_type = 'KDE'
+weight_function_type = args.weight_function
+#weight_function_type = 'KDE'
 if weight_function_type == 'KNN' or weight_function_type == 'NN_classifier':
     generative = False
 
 else:
     generative = True
-#ds_aware = args.ds_aware
-ds_aware = False
+ds_aware = args.ds_aware
+#ds_aware = False
 print('DS AWARE = {}'.format(ds_aware))
 #tweakpara_list = [0.01, 0.025, 0.05, 0.075, 0.1, 0.2, 0.5, 1.0]
 #tweakpara_list = [0.01, 0.05, 0.1, 0.3, 0.5, 1.0]
@@ -252,7 +252,7 @@ else:
 
 #tweakpara_list = [1, 10, 100, 1000, 5000, 10000]
 
-tweakpara_list = [0.5]
+#tweakpara_list = [0.5]
 
 mean_desc_list = []
 #
