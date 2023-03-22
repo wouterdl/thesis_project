@@ -1,6 +1,6 @@
 # Thesis Project: Domain shift-aware Visual Place Recognition
 
-This repository contains the code of the Msc thesis work 'Domain shift-aware Visual Place Recognition'.
+This repository contains the code of the Msc thesis work '[Domain shift-aware Visual Place Recognition](http://resolver.tudelft.nl/uuid:bdda0da4-69fc-4007-912c-23258d751bea)'.
 
 ## Installation
 
